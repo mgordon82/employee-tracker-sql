@@ -31,9 +31,13 @@ async function getDepartments() {
 }
 
 async function addDepartments(name) {
+  console.log('name', name);
   try {
-    const response = await pool.query(`INSERT INTO department (${name})`);
-    console.table(response.rows);
+    const response = await pool.query(
+      `INSERT INTO department (name) VALUES ($1) RETURNING name`,
+      [name]
+    );
+    console.log(response.rows[0]);
   } catch (error) {
     console.error('There was an error adding a department', error);
     throw error;
@@ -83,8 +87,7 @@ function init() {
             name: 'department',
           })
           .then((deptRes) => {
-            console.log('res', deptRes);
-            addDepartments(deptRes.department);
+            addDepartments(deptRes.department).then(() => init());
           });
         console.log('add department');
         break;

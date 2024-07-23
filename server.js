@@ -1,40 +1,87 @@
 const inquirer = require('inquirer');
-const prompts = require('./prompts');
-const express = require('express');
-const { Pool } = require('pg');
-
-const app = express();
-
-app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
-
-const pool = new Pool(
-  {
-    user: 'postgres',
-    password: 'admin',
-    host: 'localhost',
-    database: 'employees_db',
-  },
-  console.log('Connected!')
-);
-
-pool.connect();
+const pool = require('./pools/config');
+const {
+  VIEW_DEPARTMENTS,
+  VIEW_EMPLOYEES,
+  VIEW_ROLES,
+  ADD_DEPARTMENT,
+  ADD_EMPLOYEE,
+  ADD_ROLE,
+  QUIT_OPTION,
+} = require('./prompts/actions');
 
 async function getDepartments() {
   try {
-    const response = await pool.query(`SELECT name FROM department`);
-    console.table(response.rows);
+    await pool.query(`SELECT * FROM department`).then(({ rows }) => {
+      console.table(rows);
+      init();
+    });
   } catch (error) {
     console.error('There was an error getting departments', error);
     throw error;
   }
 }
 
-async function addDepartments(name) {
-  console.log('name', name);
+async function getRoles() {
+  try {
+    await pool
+      .query(`SELECT title, id, salary, department FROM role`)
+      .then(({ rows }) => {
+        console.table(rows);
+        init();
+      });
+  } catch (error) {
+    console.error('There was an error getting roles', error);
+    throw error;
+  }
+}
+
+async function getEmployees() {
+  try {
+    await pool
+      .query(
+        `SELECT id, first_name, last_name, role_id, manager_id FROM employee`
+      )
+      .then(({ rows }) => {
+        console.table(rows);
+        init();
+      });
+  } catch (error) {
+    console.error('There was an error getting employees', error);
+    throw error;
+  }
+}
+
+async function addDepartment(name) {
+  try {
+    await pool
+      .query(`INSERT INTO department (name) VALUES ($1)`, [name])
+      .then(() => {
+        console.log('Department added successfully');
+        init();
+      });
+  } catch (error) {
+    console.error('There was an error adding a department', error);
+    throw error;
+  }
+}
+
+async function addRole(name) {
+  try {
+    const response = await pool.query(`INSERT INTO role (name) VALUES ($1)`, [
+      name,
+    ]);
+    console.log(response.rows[0]);
+  } catch (error) {
+    console.error('There was an error adding a department', error);
+    throw error;
+  }
+}
+
+async function addEmployee(name) {
   try {
     const response = await pool.query(
-      `INSERT INTO department (name) VALUES ($1) RETURNING name`,
+      `INSERT INTO employee (first) VALUES ($1)`,
       [name]
     );
     console.log(response.rows[0]);
@@ -44,68 +91,39 @@ async function addDepartments(name) {
   }
 }
 
-async function getRoles() {
-  try {
-    const response = await pool.query(
-      `SELECT title, id, salary, department FROM role`
-    );
-    console.table(response.rows);
-  } catch (error) {
-    console.error('There was an error getting roles', error);
-    throw error;
-  }
+function quitPrompt() {
+  console.log('Thank you and Goodbye');
+  process.exit(0);
 }
-
-async function getEmployees() {
-  try {
-    const response = await pool.query(
-      `SELECT id, first_name, last_name, role_id, manager_id FROM employee`
-    );
-    console.table(response.rows);
-  } catch (error) {
-    console.error('There was an error getting employees', error);
-    throw error;
-  }
-}
+const prompt = [
+  {
+    message: 'What would you like to do?',
+    name: 'question',
+    type: 'list',
+    choices: [
+      VIEW_DEPARTMENTS,
+      VIEW_EMPLOYEES,
+      VIEW_ROLES,
+      ADD_DEPARTMENT,
+      ADD_EMPLOYEE,
+      ADD_ROLE,
+      QUIT_OPTION,
+    ],
+  },
+];
 
 function init() {
-  inquirer.prompt(prompts).then((response) => {
-    switch (response?.question1) {
-      case 'viewDepartments':
-        getDepartments().then(() => init());
-        break;
-      case 'viewRoles':
-        getRoles().then(() => init());
-        break;
-      case 'viewEmployees':
-        getEmployees().then(() => init());
-        break;
-      case 'addDepartment':
-        inquirer
-          .prompt({
-            message: 'Enter name of the department',
-            name: 'department',
-          })
-          .then((deptRes) => {
-            addDepartments(deptRes.department).then(() => init());
-          });
-        console.log('add department');
-        break;
-      case 'addRole':
-        console.log('add role');
-        break;
-      case 'addEmployee':
-        console.log('add employee');
-        break;
-      case 'updateEmployeeRole':
-        console.log('update employee role');
-        break;
-      case 'quit':
-        process.exit(0);
-      default:
-        console.log('there was an error');
-        break;
-    }
+  inquirer.prompt(prompt).then(({ question }) => {
+    const options = {
+      [VIEW_DEPARTMENTS]: getDepartments,
+      [VIEW_ROLES]: getRoles,
+      [VIEW_EMPLOYEES]: getEmployees,
+      [ADD_DEPARTMENT]: addDepartment,
+      [ADD_ROLE]: addRole,
+      [ADD_EMPLOYEE]: addEmployee,
+      [QUIT_OPTION]: quitPrompt,
+    };
+    options[question]();
   });
 }
 

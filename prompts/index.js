@@ -1,41 +1,26 @@
+const {
+  VIEW_DEPARTMENTS,
+  VIEW_EMPLOYEES,
+  VIEW_ROLES,
+  ADD_DEPARTMENT,
+  ADD_EMPLOYEE,
+  ADD_ROLE,
+  QUIT_OPTION,
+} = require('./actions');
+
 const prompts = [
   {
     message: 'What would you like to do?',
-    name: 'question1',
+    name: 'question',
     type: 'list',
     choices: [
-      {
-        value: 'viewDepartments',
-        name: 'View All Departments',
-      },
-      {
-        value: 'viewRoles',
-        name: 'View All Roles',
-      },
-      {
-        value: 'viewEmployees',
-        name: 'View All Employees',
-      },
-      {
-        value: 'addDepartment',
-        name: 'Add a Department',
-      },
-      {
-        value: 'addRole',
-        name: 'Add a Role',
-      },
-      {
-        value: 'addEmployee',
-        name: 'Add an Employee',
-      },
-      {
-        value: 'updateEmployeeRole',
-        name: 'Update an Employee Role',
-      },
-      {
-        value: 'quit',
-        name: 'Quit',
-      },
+      VIEW_DEPARTMENTS,
+      VIEW_EMPLOYEES,
+      VIEW_ROLES,
+      ADD_DEPARTMENT,
+      ADD_EMPLOYEE,
+      ADD_ROLE,
+      QUIT_OPTION,
     ],
   },
 ];
